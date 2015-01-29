@@ -20,59 +20,106 @@ import com.google.gson.Gson;
 public abstract class CloudantWriter implements Callable<WriteCode> {
 	protected static final Logger	log			= Logger.getLogger(CloudantWriter.class);
 
-	protected Gson					gson		= new Gson();
 	protected Database				database	= null;
+	protected Gson					gson		= new Gson();
 
 	public CloudantWriter(Database database) {
 		this.database = database;
 	}
 
-	private boolean insert(Map<String, Object> map) {
+	protected WriteCode insert(Map<String, Object> map) {
+		int i = 0;
+		while (i < 30) {
+			i++;
+			WriteCode ic = _insert(map);
+			switch (ic) {
+				case TIMEOUT:
+					break;
+				case CONFLICT:
+				case EXCEPTION:
+				case INSERT:
+				case MAX_ATTEMPTS:
+				case SECURITY:
+				case UPDATE:
+					return ic;
+			}
+		}
+
+		return WriteCode.MAX_ATTEMPTS;
+	}
+
+	private WriteCode _insert(Map<String, Object> map) {
 		Object id = map.get("_id");
 		try {
 			log.debug("[id=" + id + "] - save - remote call");
 			database.save(map);
-			return true;
+			return WriteCode.INSERT;
 		} catch (DocumentConflictException e) {
 			log.debug("[id=" + id + "] - insert - DocumentConflictException - returning false");
-			return false;
+			return WriteCode.CONFLICT;
 		} catch (CouchDbException e) {
 			if (e.getCause() != null) {
 				log.debug("[id=" + id + "] - insert - CouchDbException - " + e.getCause().getMessage());
 				if (StringUtils.contains(e.getCause().getMessage(), "Connection timed out: connect")) {
 					log.debug("[id=" + id + "] - insert - CouchDbException - timeout - returning false");
-					return false;
+					return WriteCode.TIMEOUT;
 				}
 			}
 
 			if (e.getMessage().contains("\"error\":\"forbidden\",\"reason\":\"_writer access is required for this request\"")) {
-				log.fatal("Cloudant account does not have writer permissions - exiting");
-				System.exit(1);
+				log.fatal("Cloudant account does not have writer permissions");
+				return WriteCode.SECURITY;
 			}
 
-			throw e;
+			return WriteCode.EXCEPTION;
 		}
 	}
 
-	private boolean update(Map<String, Object> map) {
+	protected WriteCode update(Map<String, Object> map) {
+		int i = 0;
+		while (i < 30) {
+			i++;
+			WriteCode ic = _update(map);
+			switch (ic) {
+				case TIMEOUT:
+				case CONFLICT:
+					break;
+				case EXCEPTION:
+				case INSERT:
+				case MAX_ATTEMPTS:
+				case SECURITY:
+				case UPDATE:
+					return ic;
+			}
+		}
+
+		return WriteCode.MAX_ATTEMPTS;
+	}
+
+	private WriteCode _update(Map<String, Object> map) throws CouchDbException, SecurityException {
 		Object id = map.get("_id");
 		try {
 			log.debug("[id=" + id + "] - update - remote call");
 			database.update(map);
-			return true;
+			return WriteCode.UPDATE;
 		} catch (DocumentConflictException e) {
 			log.debug("[id=" + id + "] - update - DocumentConflictException - returning false");
-			return false;
+			return WriteCode.CONFLICT;
 		} catch (CouchDbException e) {
 			if (e.getCause() != null) {
 				log.debug("[id=" + id + "] - update - CouchDbException - " + e.getCause().getMessage());
 				if (StringUtils.contains(e.getCause().getMessage(), "Connection timed out: connect")) {
 					log.debug("[id=" + id + "] - update - CouchDbException - timeout - returning false");
-					return false;
+					return WriteCode.TIMEOUT;
 				}
 			}
 
-			throw e;
+			if (e.getMessage().contains("\"error\":\"forbidden\",\"reason\":\"_writer access is required for this request\"")) {
+				log.fatal("Cloudant account does not have writer permissions");
+				return WriteCode.SECURITY;
+			}
+
+			return WriteCode.EXCEPTION;
 		}
 	}
 
@@ -90,31 +137,31 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
 	protected WriteCode upsert(String id, Map<String, Object> map) {
 		Map<String, Object> toUpsert = map;
 		try {
-			if (insert(toUpsert)) {
-				//
-				// Insert worked, nothing else to do in this scenario
-				log.debug("[id=" + id + "] - insert - succeeded");
-				return WriteCode.INSERT;
-			} else {
-				//
-				// Conflict, get the old version, merge in our changes (adding)
-				int i = 0;
-				while (i < 30) {
-					i++;
+			WriteCode insertCode = insert(toUpsert);
+			switch (insertCode) {
+				case INSERT:
+					//
+					// Insert worked, nothing else to do in this scenario
+					log.debug("[id=" + id + "] - insert - succeeded");
+					return WriteCode.INSERT;
+				case CONFLICT:
+					//
+					// Conflict, get the old version, merge in our changes (adding)
 					toUpsert = handleConflict(toUpsert);
-
-					if (update(toUpsert)) {
-						log.debug("[id=" + id + "] - update - succeeded");
-						return WriteCode.UPDATE;
-					} else {
-						continue;
+					WriteCode updateCode = update(toUpsert);
+					switch (updateCode) {
+						case UPDATE:
+							log.debug("[id=" + id + "] - update - succeeded");
+							break;
+						default:
+							log.debug("[id=" + id + "] - update - failed - " + updateCode);
+							break;
 					}
-				}
 
-				//
-				// If we get to here it means we passed the max attempts - log that we did not write the message
-				log.warn("[id=" + id + "] - Unable to upsert a document after " + 30 + " attempts - [" + gson.toJson(toUpsert) + "]");
-				return WriteCode.MAX_ATTEMPTS;
+					return updateCode;
+				default:
+					log.debug("[id=" + id + "] - insert - failed - " + insertCode);
+					return insertCode;
 			}
 		} catch (Exception e) {
 			log.warn("[id=" + id + "] - Unable to upsert a document due to exception - [" + gson.toJson(toUpsert) + "]", e);
