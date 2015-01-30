@@ -9,6 +9,12 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Layout;
 import org.apache.log4j.spi.ErrorCode;
 
+/**
+ * This is a customized log4j appender, which will create a new file for every run of the application.
+ * 
+ * @author Veera Sundar
+ * @see http://veerasundar.com/blog/2009/08/how-to-create-a-new-log-file-for-each-time-the-application-runs/
+ */
 public class NewLogFileForEachRunAppender extends FileAppender {
 	boolean	renamed	= false;
 

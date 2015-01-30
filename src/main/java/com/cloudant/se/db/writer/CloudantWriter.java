@@ -17,6 +17,11 @@ import com.cloudant.se.Constants.WriteCode;
 import com.cloudant.se.db.exception.StructureException;
 import com.google.gson.Gson;
 
+/**
+ * Callable which provides the base methods to insert/update/upsert a document into a cloudant database
+ * 
+ * @author IBM
+ */
 public abstract class CloudantWriter implements Callable<WriteCode> {
 	protected static final Logger	log			= Logger.getLogger(CloudantWriter.class);
 
