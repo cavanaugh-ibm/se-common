@@ -1,4 +1,4 @@
-package com.cloudant.se.writer;
+package com.cloudant.se.db.writer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,7 +14,7 @@ import org.lightcouch.DocumentConflictException;
 
 import com.cloudant.client.api.Database;
 import com.cloudant.se.Constants.WriteCode;
-import com.cloudant.se.db.loader.exception.StructureException;
+import com.cloudant.se.db.exception.StructureException;
 import com.google.gson.Gson;
 
 public abstract class CloudantWriter implements Callable<WriteCode> {
@@ -55,13 +55,13 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
 			database.save(map);
 			return WriteCode.INSERT;
 		} catch (DocumentConflictException e) {
-			log.debug("[id=" + id + "] - insert - DocumentConflictException - returning false");
+			log.debug("[id=" + id + "] - insert - DocumentConflictException - conflict");
 			return WriteCode.CONFLICT;
 		} catch (CouchDbException e) {
 			if (e.getCause() != null) {
 				log.debug("[id=" + id + "] - insert - CouchDbException - " + e.getCause().getMessage());
 				if (StringUtils.contains(e.getCause().getMessage(), "Connection timed out: connect")) {
-					log.debug("[id=" + id + "] - insert - CouchDbException - timeout - returning false");
+					log.debug("[id=" + id + "] - insert - CouchDbException - timeout");
 					return WriteCode.TIMEOUT;
 				}
 			}
@@ -71,6 +71,7 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
 				return WriteCode.SECURITY;
 			}
 
+			log.warn("[id=" + id + "] - insert - CouchDbException - unknown", e);
 			return WriteCode.EXCEPTION;
 		}
 	}
@@ -83,6 +84,11 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
 			switch (ic) {
 				case TIMEOUT:
 				case CONFLICT:
+					try {
+						map = handleConflict(map);
+					} catch (Exception e) {
+						return WriteCode.EXCEPTION;
+					}
 					break;
 				case EXCEPTION:
 				case INSERT:
@@ -103,13 +109,21 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
 			database.update(map);
 			return WriteCode.UPDATE;
 		} catch (DocumentConflictException e) {
-			log.debug("[id=" + id + "] - update - DocumentConflictException - returning false");
+			log.debug("[id=" + id + "] - update - DocumentConflictException - conflict");
 			return WriteCode.CONFLICT;
+		} catch (IllegalArgumentException e) {
+			if (StringUtils.contains(e.getMessage(), "rev may not be null")) {
+				log.debug("[id=" + id + "] - update - IllegalArgumentException - missing rev ");
+				return WriteCode.EXCEPTION;
+			}
+
+			log.warn("[id=" + id + "] - update - IllegalArgumentException - unknown", e);
+			return WriteCode.EXCEPTION;
 		} catch (CouchDbException e) {
 			if (e.getCause() != null) {
 				log.debug("[id=" + id + "] - update - CouchDbException - " + e.getCause().getMessage());
 				if (StringUtils.contains(e.getCause().getMessage(), "Connection timed out: connect")) {
-					log.debug("[id=" + id + "] - update - CouchDbException - timeout - returning false");
+					log.debug("[id=" + id + "] - update - CouchDbException - timeout");
 					return WriteCode.TIMEOUT;
 				}
 			}
@@ -119,6 +133,7 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
 				return WriteCode.SECURITY;
 			}
 
+			log.warn("[id=" + id + "] - update - CouchDbException - unknown", e);
 			return WriteCode.EXCEPTION;
 		}
 	}

@@ -1,4 +1,4 @@
-package com.cloudant.se.db.loader.exception;
+package com.cloudant.se.db.exception;
 
 public class LoadException extends RuntimeException {
 	private static final long	serialVersionUID	= -1417775420488373973L;

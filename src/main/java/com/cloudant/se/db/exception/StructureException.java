@@ -1,4 +1,4 @@
-package com.cloudant.se.db.loader.exception;
+package com.cloudant.se.db.exception;
 
 public class StructureException extends RuntimeException {
 	private static final long	serialVersionUID	= -2166938256993046957L;
