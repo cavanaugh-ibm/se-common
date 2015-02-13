@@ -59,8 +59,8 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
 		try {
 			log.debug("[id=" + id + "] - save - remote call");
 
-			// Remove the magic string for generated IDs
-			if (id != null && StringUtils.equals(id.toString(), Constants.GENERATED)) {
+			if (id == null || StringUtils.isBlank(id.toString())) {
+				// Remove the magic string for generated IDs
 				map.remove("_id");
 			}
 			database.save(map);
