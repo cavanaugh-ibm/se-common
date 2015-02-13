@@ -13,7 +13,6 @@ import org.lightcouch.CouchDbException;
 import org.lightcouch.DocumentConflictException;
 
 import com.cloudant.client.api.Database;
-import com.cloudant.se.Constants;
 import com.cloudant.se.Constants.WriteCode;
 import com.cloudant.se.db.exception.StructureException;
 import com.google.gson.Gson;
@@ -117,6 +116,12 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
 		Object id = map.get("_id");
 		try {
 			log.debug("[id=" + id + "] - update - remote call");
+
+			if (id == null || StringUtils.isBlank(id.toString())) {
+				// Remove the magic string for generated IDs
+				map.remove("_id");
+			}
+
 			database.update(map);
 			return WriteCode.UPDATE;
 		} catch (DocumentConflictException e) {
