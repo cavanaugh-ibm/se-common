@@ -7,14 +7,14 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.lightcouch.CouchDbException;
 import org.lightcouch.DocumentConflictException;
 
 import com.cloudant.client.api.Database;
 import com.cloudant.se.Constants.WriteCode;
 import com.cloudant.se.db.exception.StructureException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
 /**

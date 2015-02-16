@@ -2,14 +2,15 @@ package com.cloudant.se.lock;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 
+import com.google.common.collect.Maps;
+
 public class LockManager {
 	private static final boolean								enabled		= true;
-	protected static final ConcurrentMap<String, Semaphore>		locksKnown	= new ConcurrentHashMap<>();
-	protected static final ThreadLocal<Map<String, Semaphore>>	locksHeld	= new ThreadLocal<>();
+	protected static final ConcurrentMap<String, Semaphore>		locksKnown	= Maps.newConcurrentMap();
+	protected static final ThreadLocal<Map<String, Semaphore>>	locksHeld	= new ThreadLocal<Map<String, Semaphore>>();
 
 	public static void acquire(String key) throws InterruptedException {
 		if (enabled) {
