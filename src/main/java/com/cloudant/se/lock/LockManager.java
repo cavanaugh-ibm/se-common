@@ -9,8 +9,8 @@ import com.google.common.collect.Maps;
 
 public class LockManager {
 	private static final boolean								enabled		= true;
-	protected static final ConcurrentMap<String, Semaphore>		locksKnown	= Maps.newConcurrentMap();
 	protected static final ThreadLocal<Map<String, Semaphore>>	locksHeld	= new ThreadLocal<Map<String, Semaphore>>();
+	protected static final ConcurrentMap<String, Semaphore>		locksKnown	= Maps.newConcurrentMap();
 
 	public static void acquire(String key) throws InterruptedException {
 		if (enabled) {

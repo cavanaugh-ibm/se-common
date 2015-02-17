@@ -3,6 +3,18 @@ package com.cloudant.se.util;
 import java.util.Properties;
 
 public class Utils {
+	public static String getHostName(String account) {
+		if (account.startsWith("http://")) {
+			return account.substring(7);
+		}
+		else if (account.startsWith("https://")) {
+			return account.substring(8);
+		}
+		else {
+			return account + ".cloudant.com";
+		}
+	}
+
 	public static Properties getProperties() {
 		Properties properties = new Properties();
 		try {
@@ -14,17 +26,5 @@ public class Utils {
 		}
 
 		return properties;
-	}
-
-	public static String getHostName(String account) {
-		if (account.startsWith("http://")) {
-			return account.substring(7);
-		}
-		else if (account.startsWith("https://")) {
-			return account.substring(8);
-		}
-		else {
-			return account + ".cloudant.com";
-		}
 	}
 }

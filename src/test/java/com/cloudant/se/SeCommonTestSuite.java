@@ -7,7 +7,7 @@ import com.cloudant.se.db.writer.CloudantWriterTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-		CloudantWriterTest.class
+	CloudantWriterTest.class
 })
 public class SeCommonTestSuite {
 }

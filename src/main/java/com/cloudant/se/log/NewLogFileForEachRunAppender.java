@@ -11,7 +11,7 @@ import org.apache.log4j.spi.ErrorCode;
 
 /**
  * This is a customized log4j appender, which will create a new file for every run of the application.
- * 
+ *
  * @author Veera Sundar
  * @see http://veerasundar.com/blog/2009/08/how-to-create-a-new-log-file-for-each-time-the-application-runs/
  */
@@ -21,18 +21,19 @@ public class NewLogFileForEachRunAppender extends FileAppender {
 	public NewLogFileForEachRunAppender() {
 	}
 
-	public NewLogFileForEachRunAppender(Layout layout, String filename, boolean append, boolean bufferedIO, int bufferSize) throws IOException {
-		super(layout, filename, append, bufferedIO, bufferSize);
+	public NewLogFileForEachRunAppender(Layout layout, String filename) throws IOException {
+		super(layout, filename);
 	}
 
 	public NewLogFileForEachRunAppender(Layout layout, String filename, boolean append) throws IOException {
 		super(layout, filename, append);
 	}
 
-	public NewLogFileForEachRunAppender(Layout layout, String filename) throws IOException {
-		super(layout, filename);
+	public NewLogFileForEachRunAppender(Layout layout, String filename, boolean append, boolean bufferedIO, int bufferSize) throws IOException {
+		super(layout, filename, append, bufferedIO, bufferSize);
 	}
 
+	@Override
 	public void activateOptions() {
 		if (fileName != null) {
 			try {

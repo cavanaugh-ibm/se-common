@@ -34,7 +34,7 @@ public class CloudantWriterTest extends BaseTest {
 		Map<String, Object> sent = getMap(id, false);
 		testInsertExpected(sent, WriteCode.INSERT);
 		try {
-			testGet(sent, writer.getFromCloudant(id));
+			testGet(sent, writer.get(id));
 		} catch (IOException e) {
 			fail("Should have been able to read this id");
 		}
@@ -50,7 +50,7 @@ public class CloudantWriterTest extends BaseTest {
 	@Test
 	public void testUpdate() {
 		testUpdateExpected(getMap("testUpdate-1", true), WriteCode.UPDATE);
-		testUpdateExpected(getMap("testUpdate-2", false), WriteCode.EXCEPTION);
+		testUpdateExpected(getMap("testUpdate-2", false), WriteCode.MISSING_REV);
 	}
 
 	@Test

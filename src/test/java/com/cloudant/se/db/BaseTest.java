@@ -12,8 +12,8 @@ import com.cloudant.se.util.Utils;
 
 public class BaseTest {
 	protected static CloudantClient	client;
-	protected static String			databaseName;
 	protected static Database		database;
+	protected static String			databaseName;
 	protected static Properties		props;
 
 	@BeforeClass
