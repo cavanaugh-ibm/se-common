@@ -2,9 +2,14 @@
 
 A set of common and reusable libraries for Cloudant
 
+* [Notes](#notes)
 * [Tests](#tests)
 * [License](#license)
   
+##Notes
+
+Make sure that you use httpclient version > 4.3.6 or there is a significant chance you will run into errors on reading documents where the socket timeout will not be honoroed and your program will hang forever.
+
 ## Tests
 
 To run the test suite first edit the cloudant properties. Create or open the file `src/test/resources/cloudant-account.properties` and `src/test/resources/cloudant-base.properties`, provide values for the following properties  
