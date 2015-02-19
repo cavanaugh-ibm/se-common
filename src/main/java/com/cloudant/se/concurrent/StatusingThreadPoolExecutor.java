@@ -11,55 +11,55 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 public class StatusingThreadPoolExecutor extends ThreadPoolExecutor {
-	protected static final Logger	log		= Logger.getLogger(StatusingThreadPoolExecutor.class);
-	protected static final String	LOG_MSG	= "STATUS - [ActiveT=%d][MinT=%d][CurrentT=%d][MaxT=%d][WaitingTasks=%d][CompletedTasks=%d][TotalTasks=%d]";
-	protected static final Timer	timer	= new Timer();
+    protected static final Logger log     = Logger.getLogger(StatusingThreadPoolExecutor.class);
+    protected static final String LOG_MSG = "STATUS - [ActiveT=%d][MinT=%d][CurrentT=%d][MaxT=%d][WaitingTasks=%d][CompletedTasks=%d][TotalTasks=%d]";
+    protected static final Timer  timer   = new Timer();
 
-	public StatusingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
-		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-		setupStatusTask();
-	}
+    public StatusingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
+        setupStatusTask();
+    }
 
-	public StatusingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler) {
-		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
-		setupStatusTask();
-	}
+    public StatusingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler) {
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
+        setupStatusTask();
+    }
 
-	public StatusingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory) {
-		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
-		setupStatusTask();
-	}
+    public StatusingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory) {
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
+        setupStatusTask();
+    }
 
-	public StatusingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory,
-			RejectedExecutionHandler handler) {
-		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
-		setupStatusTask();
-	}
+    public StatusingThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory,
+            RejectedExecutionHandler handler) {
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
+        setupStatusTask();
+    }
 
-	private void setupStatusTask() {
-		// long interval = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
-		long interval = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
-		timer.schedule(new StatusTask(), interval, interval);
-	}
+    private void setupStatusTask() {
+        // long interval = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
+        long interval = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
+        timer.schedule(new StatusTask(), interval, interval);
+    }
 
-	protected void logStatus() {
-		log.info(String.format(LOG_MSG, getActiveCount(), getCorePoolSize(), getPoolSize(), getMaximumPoolSize(), getQueue().size(), getCompletedTaskCount(), getTaskCount()));
-	}
+    protected void logStatus() {
+        log.info(String.format(LOG_MSG, getActiveCount(), getCorePoolSize(), getPoolSize(), getMaximumPoolSize(), getQueue().size(), getCompletedTaskCount(), getTaskCount()));
+    }
 
-	@Override
-	protected void terminated() {
-		try {
-			timer.cancel();
-		} catch (Exception e) {
-		}
+    @Override
+    protected void terminated() {
+        try {
+            timer.cancel();
+        } catch (Exception e) {
+        }
 
-		logStatus();
-	}
+        logStatus();
+    }
 
-	class StatusTask extends TimerTask {
-		@Override
-		public void run() {
-			logStatus();
-		}
-	}
+    class StatusTask extends TimerTask {
+        @Override
+        public void run() {
+            logStatus();
+        }
+    }
 }

@@ -3,39 +3,69 @@ package com.cloudant.se.db;
 import java.util.Properties;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 
 import com.cloudant.client.api.CloudantClient;
 import com.cloudant.client.api.Database;
 import com.cloudant.client.api.model.ConnectOptions;
-import com.cloudant.se.util.Utils;
 
 public class BaseTest {
-	protected static CloudantClient	client;
-	protected static Database		database;
-	protected static String			databaseName;
-	protected static Properties		props;
+    protected static CloudantClient client;
+    protected static Database       database;
+    protected static String         databaseName;
+    protected static Properties     props;
 
-	@BeforeClass
-	public static void setUpClass() {
-		props = Utils.getProperties();
+    @BeforeClass
+    public static void setUpClass() {
+        props = getProperties();
 
-		ConnectOptions options = new ConnectOptions();
-		// options.setConnectionTimeout(props.get("couchdb.http.connection.timeout"));
-		// options.setMaxConnections(props.get("couchdb.max.connections"));
-		// options.setProxyHost(props.get("couchdb.proxy.host"));
-		// options.setProxyPort(props.get("couchdb.proxy.port"));
-		// options.setSocketTimeout(props.get("http.socket.timeout"));
+        ConnectOptions options = new ConnectOptions();
+        // options.setConnectionTimeout(props.get("couchdb.http.connection.timeout"));
+        // options.setMaxConnections(props.get("couchdb.max.connections"));
+        // options.setProxyHost(props.get("couchdb.proxy.host"));
+        // options.setProxyPort(props.get("couchdb.proxy.port"));
+        // options.setSocketTimeout(props.get("http.socket.timeout"));
 
-		client = new CloudantClient(props.getProperty("cloudant.account"), props.getProperty("cloudant.username"), props.getProperty("cloudant.password"), options);
+        client = new CloudantClient(getProp("cloudant.test.account", true), getProp("cloudant.test.username", true), getProp("cloudant.test.password", false), options);
 
-		databaseName = props.getProperty("cloudant.database") + "-" + System.currentTimeMillis();
-		database = client.database(databaseName, true);
-	}
+        databaseName = props.getProperty("cloudant.test.database.prefix") + "-" + System.currentTimeMillis();
+        database = client.database(databaseName, true);
+    }
 
-	@AfterClass
-	public static void tearDownClass() {
-		client.deleteDB(databaseName, "delete database");
-		client.shutdown();
-	}
+    @AfterClass
+    public static void tearDownClass() {
+        if (client != null) {
+            client.deleteDB(databaseName, "delete database");
+            client.shutdown();
+        }
+    }
+
+    protected static String getProp(String propName, boolean allowPropsFile) {
+        String value = System.getProperty(propName);
+        if (value == null && allowPropsFile) {
+            value = props.getProperty(propName);
+        }
+
+        if (allowPropsFile) {
+            Assert.assertNotNull(propName + " must be set as either a system property or in the properties file", value);
+        } else {
+            Assert.assertNotNull(propName + " must be set as a system property", value);
+        }
+
+        System.out.printf("Returning %s for %s\n", value, propName);
+        return value;
+    }
+
+    protected static Properties getProperties() {
+        Properties properties = new Properties();
+        try {
+            properties.load(BaseTest.class.getClassLoader().getResourceAsStream("cloudant.properties"));
+        } catch (Exception e) {
+            String msg = "Could not read configuration files from the classpath";
+            throw new IllegalStateException(msg, e);
+        }
+
+        return properties;
+    }
 }

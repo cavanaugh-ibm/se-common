@@ -10,22 +10,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class CloudantWriterTestImpl extends CloudantWriter {
 
-	public CloudantWriterTestImpl(Database database) {
-		super(database);
-	}
+    public CloudantWriterTestImpl(Database database) {
+        super(database);
+    }
 
-	@Override
-	public WriteCode call() throws Exception {
-		return WriteCode.EXCEPTION;
-	}
+    @Override
+    public WriteCode call() throws Exception {
+        return WriteCode.EXCEPTION;
+    }
 
-	@Override
-	protected Map<String, Object> handleConflict(Map<String, Object> failed) throws StructureException, JsonProcessingException, IOException {
-		//
-		// In this base version, all we want is the latest revision number
-		Map<String, Object> fromC = get((String) failed.get("_id"));
-		failed.put("_rev", fromC.get("_rev"));
+    @Override
+    protected Map<String, Object> handleConflict(Map<String, Object> failed) throws StructureException, JsonProcessingException, IOException {
+        //
+        // In this base version, all we want is the latest revision number
+        Map<String, Object> fromC = get((String) failed.get("_id"));
+        failed.put("_rev", fromC.get("_rev"));
 
-		return failed;
-	}
+        return failed;
+    }
 }
