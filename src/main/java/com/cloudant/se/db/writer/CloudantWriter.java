@@ -1,5 +1,8 @@
 package com.cloudant.se.db.writer;
 
+import static com.cloudant.se.db.writer.CloudantWriteResult.errorResult;
+import static com.cloudant.se.db.writer.CloudantWriteResult.insertResult;
+import static com.cloudant.se.db.writer.CloudantWriteResult.updateResult;
 import static java.lang.String.format;
 
 import java.io.IOException;
@@ -12,6 +15,7 @@ import org.apache.log4j.Logger;
 import org.lightcouch.CouchDbException;
 
 import com.cloudant.client.api.Database;
+import com.cloudant.client.api.model.Response;
 import com.cloudant.se.Constants.WriteCode;
 import com.cloudant.se.db.exception.CloudantExceptionHandler;
 import com.cloudant.se.db.exception.LoadException;
@@ -25,7 +29,7 @@ import com.google.gson.Gson;
  *
  * @author IBM
  */
-public abstract class CloudantWriter implements Callable<WriteCode> {
+public abstract class CloudantWriter implements Callable<CloudantWriteResult> {
     private static final String   MSG_EXC     = "[id=%s] - %s - %s - %s";
     private static final String   MSG_STATUS  = "[id=%s] - %s - %s";
     private static final int      RETRY_COUNT = 30;
@@ -47,7 +51,7 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
         return map;
     }
 
-    private WriteCode _insert(Map<String, Object> map) {
+    private CloudantWriteResult _insert(Map<String, Object> map) {
         Object id = map.get("_id");
         try {
             log.debug(format(MSG_STATUS, id, "save", "call"));
@@ -56,8 +60,8 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
                 // Remove the magic string for generated IDs
                 map.remove("_id");
             }
-            database.save(map);
-            return WriteCode.INSERT;
+            Response response = database.save(map);
+            return insertResult(response.getId(), response.getRev());
         } catch (Throwable t) {
             WriteCode code = CloudantExceptionHandler.getWriteCode(t);
             switch (code) {
@@ -68,11 +72,12 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
                     log.debug(format(MSG_EXC, id, "insert", t.getClass().getSimpleName(), code));
                     break;
             }
-            return code;
+
+            return errorResult(code, t);
         }
     }
 
-    private WriteCode _update(Map<String, Object> map) throws CouchDbException, SecurityException {
+    private CloudantWriteResult _update(Map<String, Object> map) throws CouchDbException, SecurityException {
         Object id = map.get("_id");
         try {
             log.debug(format(MSG_STATUS, id, "update", "call"));
@@ -82,8 +87,8 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
                 map.remove("_id");
             }
 
-            database.update(map);
-            return WriteCode.UPDATE;
+            Response response = database.update(map);
+            return updateResult(response.getId(), response.getRev());
         } catch (Throwable t) {
             WriteCode code = CloudantExceptionHandler.getWriteCode(t);
             switch (code) {
@@ -94,7 +99,8 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
                     log.debug(format(MSG_EXC, id, "update", t.getClass().getSimpleName(), code));
                     break;
             }
-            return code;
+
+            return errorResult(code, t);
         }
     }
 
@@ -119,12 +125,12 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
 
     protected abstract Map<String, Object> handleConflict(Map<String, Object> failed) throws StructureException, JsonProcessingException, IOException;
 
-    protected WriteCode insert(Map<String, Object> map) {
+    protected CloudantWriteResult insert(Map<String, Object> map) {
         int i = 0;
         while (i < RETRY_COUNT) {
             i++;
-            WriteCode ic = _insert(map);
-            switch (ic) {
+            CloudantWriteResult result = _insert(map);
+            switch (result.getWriteCode()) {
                 case TIMEOUT:
                     break; // Loop
                 case CONFLICT:
@@ -134,72 +140,72 @@ public abstract class CloudantWriter implements Callable<WriteCode> {
                 case SECURITY:
                 case MISSING_REV:
                 case UPDATE:
-                    return ic; // Exit
+                    return result; // Exit
             }
         }
 
-        return WriteCode.MAX_ATTEMPTS; // If we hit here it means that we hit our max retry attempts, Exit
+        return errorResult(WriteCode.MAX_ATTEMPTS, null); // If we hit here it means that we hit our max retry attempts, Exit
     }
 
-    protected WriteCode update(Map<String, Object> map) {
+    protected CloudantWriteResult update(Map<String, Object> map) {
         int i = 0;
         while (i < RETRY_COUNT) {
             i++;
-            WriteCode ic = _update(map);
-            switch (ic) {
+            CloudantWriteResult result = _update(map);
+            switch (result.getWriteCode()) {
                 case TIMEOUT:
                 case CONFLICT:
                     try {
                         map = handleConflict(map);
                     } catch (Exception e) {
-                        return WriteCode.EXCEPTION; // Exit
+                        return errorResult(WriteCode.EXCEPTION, e); // Exit
                     }
                     break; // Loop
                 case EXCEPTION:
                 case INSERT:
                 case MAX_ATTEMPTS:
-                case SECURITY:
                 case MISSING_REV:
+                case SECURITY:
                 case UPDATE:
-                    return ic; // Exit
+                    return result; // Exit
             }
         }
 
-        return WriteCode.MAX_ATTEMPTS; // If we hit here it means that we hit our max retry attempts, Exit
+        return errorResult(WriteCode.MAX_ATTEMPTS, null); // If we hit here it means that we hit our max retry attempts, Exit
     }
 
-    protected WriteCode upsert(String id, Map<String, Object> map) {
+    protected CloudantWriteResult upsert(String id, Map<String, Object> map) {
         Map<String, Object> toUpsert = map;
         try {
-            WriteCode insertCode = insert(toUpsert);
-            switch (insertCode) {
+            CloudantWriteResult insertResult = insert(toUpsert);
+            switch (insertResult.getWriteCode()) {
                 case INSERT:
                     //
                     // Insert worked, nothing else to do in this scenario
                     log.debug(format(MSG_STATUS, id, "insert", "succeeded"));
-                    return WriteCode.INSERT;
+                    return insertResult;
                 case CONFLICT:
                     //
                     // Conflict, get the old version, merge in our changes (adding)
                     toUpsert = handleConflict(toUpsert);
-                    WriteCode updateCode = update(toUpsert);
-                    switch (updateCode) {
+                    CloudantWriteResult updateResult = update(toUpsert);
+                    switch (updateResult.getWriteCode()) {
                         case UPDATE:
                             log.debug(format(MSG_STATUS, id, "update", "succeeded"));
                             break;
                         default:
-                            log.debug(format(MSG_EXC, id, "update", "failed", updateCode));
+                            log.debug(format(MSG_EXC, id, "update", "failed", updateResult.getWriteCode()));
                             break;
                     }
 
-                    return updateCode;
+                    return updateResult;
                 default:
-                    log.debug(format(MSG_EXC, id, "insert", "failed", insertCode));
-                    return insertCode;
+                    log.debug(format(MSG_EXC, id, "insert", "failed", insertResult.getWriteCode()));
+                    return insertResult;
             }
         } catch (Exception e) {
             log.warn(format(MSG_EXC, id, "upsert", "failed", gson.toJson(toUpsert)), e);
-            return WriteCode.EXCEPTION;
+            return errorResult(WriteCode.EXCEPTION, e);
         }
     }
 }

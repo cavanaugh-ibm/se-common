@@ -20,11 +20,13 @@ public class CloudantWriterTest extends BaseTest {
 
     @After
     public void after() {
+        super.after();
         writer = null;
     }
 
     @Before
     public void before() {
+        super.before();
         writer = new CloudantWriterTestImpl(database);
     }
 
@@ -49,8 +51,8 @@ public class CloudantWriterTest extends BaseTest {
 
     @Test
     public void testUpdate() {
-        testUpdateExpected(getMap("testUpdate-1", true), WriteCode.UPDATE);
-        testUpdateExpected(getMap("testUpdate-2", false), WriteCode.MISSING_REV);
+        testUpdateExpected(getMap("testUpdate-1", true), WriteCode.EXCEPTION); // We are updating with an invalid REV
+        testUpdateExpected(getMap("testUpdate-2", false), WriteCode.MISSING_REV); // We are updating withou a REV
     }
 
     @Test
@@ -78,17 +80,17 @@ public class CloudantWriterTest extends BaseTest {
     }
 
     private void testInsertExpected(Map<String, Object> map, WriteCode expected) {
-        WriteCode wc = writer.insert(map);
-        assertEquals(expected, wc);
+        CloudantWriteResult actual = writer.insert(map);
+        assertEquals(expected, actual.getWriteCode());
     }
 
     private void testUpdateExpected(Map<String, Object> map, WriteCode expected) {
-        WriteCode wc = writer.update(map);
-        assertEquals(expected, wc);
+        CloudantWriteResult actual = writer.update(map);
+        assertEquals(expected, actual.getWriteCode());
     }
 
     private void testUpsertExpected(Map<String, Object> map, WriteCode expected) {
-        WriteCode wc = writer.upsert(map.get("_id").toString(), map);
-        assertEquals(expected, wc);
+        CloudantWriteResult actual = writer.upsert(map.get("_id").toString(), map);
+        assertEquals(expected, actual.getWriteCode());
     }
 }

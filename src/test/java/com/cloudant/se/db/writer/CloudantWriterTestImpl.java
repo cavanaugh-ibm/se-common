@@ -15,8 +15,8 @@ public class CloudantWriterTestImpl extends CloudantWriter {
     }
 
     @Override
-    public WriteCode call() throws Exception {
-        return WriteCode.EXCEPTION;
+    public CloudantWriteResult call() throws Exception {
+        return CloudantWriteResult.errorResult(WriteCode.EXCEPTION, new RuntimeException("Not Implemented"));
     }
 
     @Override

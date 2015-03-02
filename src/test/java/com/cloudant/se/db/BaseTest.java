@@ -2,8 +2,10 @@ package com.cloudant.se.db;
 
 import java.util.Properties;
 
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.cloudant.client.api.CloudantClient;
@@ -28,15 +30,26 @@ public class BaseTest {
         // options.setSocketTimeout(props.get("http.socket.timeout"));
 
         client = new CloudantClient(getProp("cloudant.test.account", true), getProp("cloudant.test.username", true), getProp("cloudant.test.password", false), options);
+    }
 
-        databaseName = props.getProperty("cloudant.test.database.prefix") + "-" + System.currentTimeMillis();
+    @Before
+    public void before() {
+        databaseName = props.getProperty("cloudant.test.database.prefix", "JunitTesting-") + "-" + System.currentTimeMillis();
         database = client.database(databaseName, true);
+    }
+
+    @After
+    public void after() {
+        if (client != null) {
+            client.deleteDB(databaseName, "delete database");
+        }
+        databaseName = null;
+        database = null;
     }
 
     @AfterClass
     public static void tearDownClass() {
         if (client != null) {
-            client.deleteDB(databaseName, "delete database");
             client.shutdown();
         }
     }
