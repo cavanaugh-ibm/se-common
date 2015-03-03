@@ -54,13 +54,13 @@ public abstract class CloudantWriter implements Callable<CloudantWriteResult> {
     private CloudantWriteResult _insert(Map<String, Object> map) {
         Object id = map.get("_id");
         try {
-            log.debug(format(MSG_STATUS, id, "save", "call"));
-
+            log.debug(format(MSG_STATUS, id, "insert", "call"));
             if (id == null || StringUtils.isBlank(id.toString())) {
-                // Remove the magic string for generated IDs
                 map.remove("_id");
             }
+
             Response response = database.save(map);
+            log.debug(format(MSG_STATUS, id, "insert", "succeeded"));
             return insertResult(response.getId(), response.getRev());
         } catch (Throwable t) {
             WriteCode code = CloudantExceptionHandler.getWriteCode(t);
@@ -80,14 +80,9 @@ public abstract class CloudantWriter implements Callable<CloudantWriteResult> {
     private CloudantWriteResult _update(Map<String, Object> map) throws CouchDbException, SecurityException {
         Object id = map.get("_id");
         try {
-            log.debug(format(MSG_STATUS, id, "update", "call"));
-
-            if (id == null || StringUtils.isBlank(id.toString())) {
-                // Remove the magic string for generated IDs
-                map.remove("_id");
-            }
-
+            log.debug(format(MSG_STATUS, id, "update", "call"));            
             Response response = database.update(map);
+            log.debug(format(MSG_STATUS, id, "update", "succeeded"));
             return updateResult(response.getId(), response.getRev());
         } catch (Throwable t) {
             WriteCode code = CloudantExceptionHandler.getWriteCode(t);
@@ -133,8 +128,8 @@ public abstract class CloudantWriter implements Callable<CloudantWriteResult> {
             switch (result.getWriteCode()) {
                 case TIMEOUT:
                     break; // Loop
-                case CONFLICT:
                 case EXCEPTION:
+                case CONFLICT:
                 case INSERT:
                 case MAX_ATTEMPTS:
                 case SECURITY:
