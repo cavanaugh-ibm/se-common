@@ -12,16 +12,19 @@ Make sure that you use httpclient version > 4.3.6 or there is a significant chan
 
 ## Tests
 
-To run the test suite first edit the cloudant properties. Create or open the file `src/test/resources/cloudant-account.properties` and `src/test/resources/cloudant-base.properties`, provide values for the following properties  
+To run the tests the following properties must be set.
 
-~~~ cloudant-account.properties
-cloudant.account=myCloudantAccount
-cloudant.username=testuser
-cloudant.password=testpassword
-cloudant.database.prefix=prefix for test database that will be created/destroyed
-~~~
+The following can come from either system properties, environment or the default configuration file `src/test/resources/cloudant.properties`
 
-Once all the required properties are provided in the properties file run `com.cloudant.test.com.cloudant.se.SeCommonTestSuite` test class.
+* cloudant_test_account=<account>
+* cloudant_test_database_prefix=<database_name>
+* cloudant_test_user=<user>
+
+The following can come from either system properties, environment but NOT the configuration file
+
+* cloudant_test_password=<password>
+
+`mvn test`
 
 ## License
 

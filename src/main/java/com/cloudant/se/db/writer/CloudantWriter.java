@@ -66,7 +66,7 @@ public abstract class CloudantWriter implements Callable<CloudantWriteResult> {
             WriteCode code = CloudantExceptionHandler.getWriteCode(t);
             switch (code) {
                 case EXCEPTION:
-                    log.warn(format(MSG_EXC, id, "insert", t.getClass().getSimpleName(), code), t);
+                    log.error(format(MSG_EXC, id, "insert", t.getClass().getSimpleName(), code), t);
                     break;
                 default:
                     log.debug(format(MSG_EXC, id, "insert", t.getClass().getSimpleName(), code));

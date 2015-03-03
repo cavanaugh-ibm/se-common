@@ -2,6 +2,7 @@ package com.cloudant.se.db;
 
 import java.util.Properties;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -29,12 +30,12 @@ public class BaseTest {
         // options.setProxyPort(props.get("couchdb.proxy.port"));
         // options.setSocketTimeout(props.get("http.socket.timeout"));
 
-        client = new CloudantClient(getProp("cloudant.test.account", true), getProp("cloudant.test.username", true), getProp("cloudant.test.password", false), options);
+        client = new CloudantClient(getProp("cloudant_test_account", true), getProp("cloudant_test_user", true), getProp("cloudant_test_password", false), options);
     }
 
     @Before
     public void before() {
-        databaseName = props.getProperty("cloudant.test.database.prefix", "JunitTesting-") + "-" + System.currentTimeMillis();
+        databaseName = props.getProperty("cloudant_test_database_prefix", "JunitTesting-") + "-" + System.currentTimeMillis();
         database = client.database(databaseName, true);
     }
 
@@ -54,19 +55,28 @@ public class BaseTest {
         }
     }
 
+    /*
+     * Read the key in this order:
+     * 
+     * <ol>
+     * <li>System property</li>
+     * <li>Environment variable</li>
+     * <li>Properties file (if allowed)</li>
+     * </ol>
+     */
     protected static String getProp(String propName, boolean allowPropsFile) {
-        String value = System.getProperty(propName);
-        if (value == null && allowPropsFile) {
+        String value = System.getProperty(propName, System.getenv(propName));
+
+        if (StringUtils.isBlank(value) && allowPropsFile) {
             value = props.getProperty(propName);
         }
 
         if (allowPropsFile) {
-            Assert.assertNotNull(propName + " must be set as either a system property or in the properties file", value);
+            Assert.assertNotNull(propName + " must be set as either a system property, an env variable, or in the properties file", value);
         } else {
-            Assert.assertNotNull(propName + " must be set as a system property", value);
+            Assert.assertNotNull(propName + " must be set as a system property or an env variable", value);
         }
 
-        System.out.printf("Returning %s for %s\n", value, propName);
         return value;
     }
 
