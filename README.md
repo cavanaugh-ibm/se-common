@@ -36,9 +36,10 @@ Licensed under the apache license, version 2.0 (the "license"); you may not use 
 
 Unless required by applicable law or agreed to in writing, software distributed under the license is distributed on an "as is" basis, without warranties or conditions of any kind, either express or implied. See the license for the specific language governing permissions and limitations under the license.
 
-[query]: http://docs.cloudant.com/api/cloudant-query.html
-[search]: http://docs.cloudant.com/api/search.html
-[auth]: http://docs.cloudant.com/api/authz.html
-[issues]: https://github.com/cloudant/java-cloudant /issues
-[follow]: https://github.com/iriscouch/follow
-[request]:  https://github.com/mikeal/request
+## Links
+
+* [Issue Tracking](https://github.com/cavanaugh-ibm/se-common)
+* [Cloudant Query Docs](http://docs.cloudant.com/api/cloudant-query.html)
+* [Cloudant Search Docs](http://docs.cloudant.com/api/search.html)
+* [Cloudant Auth Docs](http://docs.cloudant.com/api/authz.html)
+* [Cloudant Changes Follower](https://github.com/iriscouch/follow)
