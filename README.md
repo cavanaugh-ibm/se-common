@@ -38,7 +38,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 ## Links
 
-* [Issue Tracking](https://github.com/cavanaugh-ibm/se-common)
+* [Issue Tracking](https://github.com/cavanaugh-ibm/se-common/issues)
 * [Cloudant Query Docs](http://docs.cloudant.com/api/cloudant-query.html)
 * [Cloudant Search Docs](http://docs.cloudant.com/api/search.html)
 * [Cloudant Auth Docs](http://docs.cloudant.com/api/authz.html)
